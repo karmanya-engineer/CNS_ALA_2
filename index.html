@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Outbreak Lab: Virus, Worm, Trojan</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Space+Mono:wght@400;700&display=swap">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#07080d;--tx:#eceaf4;--mu:#8b8aa3;--ok:#3dff9a;--bad:#ff2e63;--c:#ff2e63;--gl:rgba(255,255,255,.045);--bd:rgba(255,255,255,.1);--d:'Space Grotesk',system-ui,sans-serif;--m:'Space Mono',ui-monospace,Consolas,monospace}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 var(--d);transition:background .6s;
+ background-image:radial-gradient(60% 40% at 15% 0,color-mix(in srgb,var(--c) 22%,transparent),transparent),radial-gradient(50% 40% at 100% 100%,color-mix(in srgb,var(--c) 14%,transparent),transparent)}
+body[data-m=worm]{--c:#ff9f1c}body[data-m=trojan]{--c:#a66bff}
+header{padding:22px 22px 4px;display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+h1{margin:0;font-size:clamp(28px,5vw,46px);line-height:.95;letter-spacing:-1.5px;font-weight:700}
+h1 em{font-style:normal;color:var(--c);transition:color .5s}
+.sub{font:12px var(--m);color:var(--mu);max-width:340px}
+.sel{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:16px 22px}
+@media(max-width:560px){.sel{grid-template-columns:1fr}}
+.pick{--k:var(--c);text-align:left;background:var(--gl);border:1px solid var(--bd);border-radius:18px;padding:12px 14px;color:var(--tx);cursor:pointer;font:inherit;display:flex;gap:12px;align-items:center;transition:.3s;position:relative;overflow:hidden}
+.pick:before{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,color-mix(in srgb,var(--k) 25%,transparent),transparent 70%);transform:translateX(-100%);transition:.6s}
+.pick:hover:before,.pick.on:before{transform:translateX(0)}
+.pick.on{border-color:var(--k);box-shadow:0 0 30px -8px var(--k)}
+.pick .ic{font-size:30px;filter:drop-shadow(0 0 10px var(--k));position:relative}
+.pick b{display:block;font-size:17px;position:relative}.pick span{font:11px var(--m);color:var(--mu);position:relative}
+.wrap{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px;padding:0 22px 26px}
+@media(max-width:900px){.wrap{grid-template-columns:1fr}}
+.panel{background:var(--gl);border:1px solid var(--bd);border-radius:22px;padding:14px;backdrop-filter:blur(8px)}
+.stage{position:relative;height:450px;border-radius:16px;overflow:hidden;background:repeating-radial-gradient(circle at 50% 50%,transparent 0 46px,rgba(255,255,255,.045) 46px 47px),#0a0b13}
+.stage:before{content:"";position:absolute;left:50%;top:50%;width:900px;height:900px;margin:-450px;background:conic-gradient(from 0deg,color-mix(in srgb,var(--c) 28%,transparent),transparent 18%);animation:sw 6s linear infinite;pointer-events:none;border-radius:50%}
+@keyframes sw{to{transform:rotate(360deg)}}
+svg.lines{position:absolute;inset:0;width:100%;height:100%}
+svg.lines line{stroke:rgba(255,255,255,.14);stroke-width:1;vector-effect:non-scaling-stroke;transition:.3s}
+svg.lines line.hot{stroke:var(--c);stroke-width:2.4;stroke-dasharray:5 4;animation:dash .5s linear infinite}
+@keyframes dash{to{stroke-dashoffset:-18}}
+.node{position:absolute;transform:translate(-50%,-50%);width:74px;text-align:center;z-index:2;transition:filter .4s}
+.hex,.hex b{clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)}
+.hex{width:58px;height:66px;margin:0 auto;background:var(--hc,#3b3d57);display:grid;place-items:center;transition:background .4s}
+.hex b{width:calc(100% - 4px);height:calc(100% - 4px);background:#0c0d17;display:grid;place-items:center}
+.hex svg{width:30px;height:30px;fill:none;stroke:var(--hs,#a9a8c4);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.node small{display:block;font:10px var(--m);color:var(--mu);margin-top:2px;white-space:nowrap}
+.node.sel2{--hc:#6fb7ff;--hs:#6fb7ff}
+.node.inf{--hc:var(--bad);--hs:var(--bad);filter:drop-shadow(0 0 10px var(--bad));animation:gl .35s infinite}
+.node.inf small{color:var(--bad)}
+.node.slow .hex{animation:sp .7s infinite}
+.node.safe{--hc:var(--ok);--hs:var(--ok);filter:drop-shadow(0 0 10px var(--ok))}
+.node.safe small{color:var(--ok)}
+.node.blk{animation:sh .4s}
+.node.hack{--hc:#ffd23f;--hs:#ffd23f;filter:drop-shadow(0 0 10px #ffd23f)}
+.badge{position:absolute;top:-4px;right:2px;font-size:14px}
+.rp{position:absolute;left:50%;top:33px;width:58px;height:58px;margin:-29px;border:2px solid var(--bad);border-radius:50%;animation:rp 1s ease-out forwards;pointer-events:none}
+@keyframes rp{to{transform:scale(3);opacity:0}}
+.files{display:flex;gap:3px;justify-content:center;margin-top:2px}
+.file{width:8px;height:10px;background:#2c2e45;border-radius:1px 3px 1px 1px;transition:.3s}
+.file.x{background:var(--bad);box-shadow:0 0 6px var(--bad)}
+@keyframes gl{25%{transform:translate(-50%,-50%) translate(-2px,1px)}50%{transform:translate(-50%,-50%) translate(2px,-1px)}}
+@keyframes sp{50%{opacity:.4}}
+@keyframes sh{25%{margin-left:-5px}75%{margin-left:5px}}
+.dot{position:absolute;transform:translate(-50%,-50%);transition:left .55s linear,top .55s linear;z-index:4;font-size:16px;line-height:1}
+.dot.c{width:11px;height:11px;border-radius:50%}
+.fake{position:absolute;left:4%;top:5%;width:37%;text-align:center;background:rgba(166,107,255,.1);border:1px dashed #a66bff;border-radius:16px;padding:12px 8px;transition:.4s;z-index:3}
+.fake.bad{background:rgba(255,46,99,.14);border:1px solid var(--bad)}
+.fake h4{margin:4px 0 2px;font-size:14px}.fake p{margin:0;color:var(--mu);font:11px var(--m)}
+.fake button{margin-top:8px;background:var(--ok);color:#03150b;border:0;border-radius:999px;padding:5px 14px;font:700 12px var(--d)}
+.door{position:absolute;left:40%;top:68%;font-size:28px;opacity:0;transition:.6s;transform:translate(-50%,-50%)}
+.door.on{opacity:1;filter:drop-shadow(0 0 10px #a66bff)}
+.status{min-height:46px;margin:10px 2px 0;font:13px/1.45 var(--m);color:var(--tx);padding:8px 10px;border-left:3px solid var(--c);background:var(--gl);border-radius:0 10px 10px 0;transition:border-color .5s}
+.vit{display:flex;align-items:center;gap:12px;margin:12px 2px 0;flex-wrap:wrap}
+.vit div{font:11px var(--m);color:var(--mu)}.vit b{display:block;font:700 22px var(--d);color:var(--tx)}
+.pills{display:flex;gap:4px;flex:1;min-width:140px}
+.pills i{flex:1;height:22px;border-radius:6px;background:#1b1c2d;transition:.4s}
+.pills i.i{background:var(--bad);box-shadow:0 0 10px var(--bad)}.pills i.s{background:var(--ok);box-shadow:0 0 10px var(--ok)}
+.ld{height:4px;background:#1b1c2d;border-radius:4px;margin:10px 2px 0;overflow:hidden}
+.ld i{display:block;height:100%;width:0;background:var(--c);transition:width .6s}
+.ctl{display:flex;gap:8px;margin-top:12px}
+.go{flex:1;background:var(--c);color:#0a0a10;border:0;border-radius:14px;padding:13px;font:700 14px var(--d);cursor:pointer;transition:.25s}
+.go:hover{transform:translateY(-2px);box-shadow:0 8px 24px -6px var(--c)}
+.go:disabled{opacity:.4;transform:none;box-shadow:none;cursor:default}
+.rs{background:transparent;color:var(--tx);border:1px solid var(--bd);border-radius:14px;padding:13px 18px;cursor:pointer;font:inherit}
+.dos{position:relative}
+.dos h2{margin:0;font-size:26px;letter-spacing:-.5px}
+.no{font:11px var(--m);color:var(--c);letter-spacing:2px}
+.stamp{position:absolute;right:0;top:4px;border:2px solid var(--c);color:var(--c);font:700 11px var(--m);padding:3px 8px;border-radius:4px;transform:rotate(8deg);letter-spacing:1.5px;opacity:.9}
+.dos h3{margin:14px 0 4px;font:700 10px var(--m);letter-spacing:2px;text-transform:uppercase;color:var(--c)}
+.dos p{margin:0;color:#cfcde0;font-size:14px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+@media(max-width:480px){.two{grid-template-columns:1fr}}
+.two>div{background:rgba(255,255,255,.035);border:1px solid var(--bd);border-radius:14px;padding:10px 12px}
+.two h3{margin-top:0}
+.two ul{list-style:none;padding:0;margin:0}.two li{font-size:13px;color:#cfcde0;padding-left:16px;position:relative;margin-bottom:4px}
+.two li:before{position:absolute;left:0;font-family:var(--m);font-weight:700}
+.pr li:before{content:"+";color:var(--bad)}.cn li:before{content:"–";color:var(--ok)}
+.gauge{text-align:center;margin-top:6px}
+.gauge svg{width:100%;max-width:240px}
+.gauge path{fill:none;stroke-width:12;stroke-linecap:round}
+.gauge .bg{stroke:#1b1c2d}.gauge .fg{stroke:var(--c);stroke-dasharray:100;stroke-dashoffset:100;transition:stroke-dashoffset 1.2s cubic-bezier(.2,.8,.2,1);filter:drop-shadow(0 0 6px var(--c))}
+.gauge text{fill:var(--tx);font:700 34px var(--d);text-anchor:middle}
+.gauge p{font:12px var(--m);color:var(--mu);margin-top:-4px}
+.sol{border:1px solid color-mix(in srgb,var(--ok) 40%,transparent);background:color-mix(in srgb,var(--ok) 7%,transparent);border-radius:14px;padding:10px 12px 10px 28px;margin:0}
+.sol li{font-size:13.5px;color:#cfcde0}.sol li::marker{color:var(--ok)}
+.fade{animation:fi .5s}@keyframes fi{from{opacity:0;transform:translateY(10px)}}
+</style></head>
+<body data-m="virus">
+<header><h1>OUTBREAK<br><em>LAB</em></h1><div class="sub">Three kinds of malware, one network. Virus and worm hit 12 PCs. 1–2 PCs are protected and stay green.</div></header>
+<div class="sel" id="tabs"></div>
+<div class="wrap">
+ <div class="panel">
+  <div class="stage" id="stage"><svg class="lines" id="lines" viewBox="0 0 100 100" preserveAspectRatio="none"></svg></div>
+  <div class="status" id="status"></div>
+  <div class="vit"><div><b id="sInf" style="color:var(--bad)">0</b>infected</div><div><b id="sSafe" style="color:var(--ok)">0</b>secure</div><div><b id="sCl">0</b>clean</div><div class="pills" id="pills"></div><div><b id="sX">0</b><span id="sXl">load %</span></div></div>
+  <div class="ld"><i id="load"></i></div>
+  <div class="ctl"><button class="go" id="go"></button><button class="rs" id="rs">Reset</button></div>
+ </div>
+ <div class="panel dos" id="info"></div>
+</div>
+<script>
+const $=id=>document.getElementById(id),sleep=ms=>new Promise(r=>setTimeout(r,ms)),rnd=n=>Math.floor(Math.random()*n);
+const INFO={
+virus:{no:'CASE 01',tag:'Needs a click',name:'Virus',icon:'🦠',lvl:'MEDIUM–HIGH',def:'Malicious code that attaches itself to a legitimate host program or file. It cannot travel alone.',
+ spread:'Requires human action, such as opening an infected email attachment, running a corrupted program, or copying a file with a USB drive.',
+ beh:'Replicates by embedding itself into other files on the computer and can corrupt or delete data. It does not jump across a network by itself.',
+ pro:['Hides inside a normal-looking file','Can damage many files once opened','Spreads whenever people share the file'],
+ con:['Needs a host file','Needs a person to open or copy it','Spreads slowly vs a worm','Antivirus and careful habits stop it'],
+ harm:68,hm:'About 68% serious-damage chance on an unprotected PC. It drops sharply if the file is never opened.',
+ fix:['Do not open unexpected attachments','Scan USB drives and keep antivirus on','Do not run unknown programs','Back up important files']},
+worm:{no:'CASE 02',tag:'Moves alone',name:'Worm',icon:'🪱',lvl:'VERY HIGH',def:'A standalone, independent program that does not need a host file to travel.',
+ spread:'Propagates automatically across network connections by exploiting system vulnerabilities, with no user interaction.',
+ beh:'Rapidly self-replicates to consume bandwidth and system resources, often causing severe slowdowns or crashes.',
+ pro:['No host file and no click needed','Copies itself and spreads very fast','Reaches every unpatched connected PC'],
+ con:['Heavy bandwidth use gets it noticed','Fails against patched, firewalled PCs','Many copies are easy to detect','Cannot pose as a useful app'],
+ harm:90,hm:'About 90% on an open network. Speed is the danger. Patched PCs block it.',
+ fix:['Install system updates quickly','Use a firewall','Split large networks into segments','Limit unused services and monitor traffic']},
+trojan:{no:'CASE 03',tag:'Wears a disguise',name:'Trojan',icon:'🐴',lvl:'HIGH',def:'Deceptive software that disguises itself as a safe, legitimate, or useful application to trick users.',
+ spread:'Relies on social engineering. A person must download or install it. It does not copy itself to other computers.',
+ beh:'Does not self-replicate. Once active, it steals sensitive data, logs keystrokes, or opens hidden backdoors for remote access.',
+ pro:['Looks helpful, so people install it','Quietly opens a backdoor','Steals files and passwords'],
+ con:['Does not self-replicate','Only the installing PC is hit','A careful download check prevents it','Removing the fake app removes it'],
+ harm:76,hm:'About 76% for the person who installs it. Spread chance to other PCs is near 0%.',
+ fix:['Download only from official stores','Read what an installer asks to do','Ignore "free tool" pop-ups','Use a non-admin account daily']}};
+const PC='<svg viewBox="0 0 48 48"><rect x="6" y="6" width="36" height="25" rx="3"/><path d="M18 42h12M24 31v11M14 14h10M14 20h16"/></svg>';
+const HK='<svg viewBox="0 0 48 48"><path d="M10 40c0-12 6-18 14-18s14 6 14 18M24 8c-7 0-10 5-10 10 0 3 2 4 4 4h12c2 0 4-1 4-4 0-5-3-10-10-10z"/><path d="M19 17h2M27 17h2"/></svg>';
+let mode='virus',nodes=[],runId=0,busy=false,kb=0;
+const st=$('stage'),sv=$('lines');
+const HX=[[14,36,58,80],[25,47,69,91],[14,36,58,80]],HY=[22,50,78];
+function tabs(){$('tabs').innerHTML=Object.keys(INFO).map(k=>`<button class="pick ${k==mode?'on':''}" onclick="setMode('${k}')" style="--k:${{virus:'#ff2e63',worm:'#ff9f1c',trojan:'#a66bff'}[k]}"><div class="ic">${INFO[k].icon}</div><div><b>${INFO[k].name}</b><span>${INFO[k].tag}</span></div></button>`).join('')}
+function infoPanel(){const i=INFO[mode],L=a=>a.map(x=>'<li>'+x+'</li>').join('');
+$('info').innerHTML=`<div class="fade"><div class="no">${i.no}</div><h2>${i.name}</h2><div class="stamp">THREAT: ${i.lvl}</div>
+<h3>Description</h3><p>${i.def}</p><h3>How it spreads</h3><p>${i.spread}</p><h3>Behavior</h3><p>${i.beh}</p>
+<div class="two"><div class="pr"><h3>Advantages (attacker)</h3><ul>${L(i.pro)}</ul></div><div class="cn"><h3>Disadvantages</h3><ul>${L(i.con)}</ul></div></div>
+<h3>Harm probability</h3><div class="gauge"><svg viewBox="0 0 200 115"><path class="bg" d="M20 100A80 80 0 0 1 180 100" pathLength="100"/><path class="fg" id="fg" d="M20 100A80 80 0 0 1 180 100" pathLength="100"/><text x="100" y="92">${i.harm}%</text></svg><p>${i.hm}</p></div>
+<h3>Solution</h3><ul class="sol">${L(i.fix)}</ul></div>`;
+requestAnimationFrame(()=>requestAnimationFrame(()=>{const g=$('fg');if(g)g.style.strokeDashoffset=100-i.harm}))}
+const setStatus=t=>$('status').textContent=t;
+function setMode(m){mode=m;document.body.dataset.m=m;tabs();infoPanel();reset()}
+function edges(){const e=[];for(let i=0;i<12;i++){const r=Math.floor(i/4),c=i%4;if(c<3)e.push([i,i+1]);
+ if(r==0){e.push([i,4+c]);if(c>0)e.push([i,4+c-1])}if(r==1){e.push([i,8+c]);if(c<3)e.push([i,8+c+1])}}return e}
+function reset(){runId++;busy=false;kb=0;st.querySelectorAll('.node,.dot,.fake,.door').forEach(e=>e.remove());sv.innerHTML='';
+ $('load').style.width=0;$('go').disabled=false;nodes=[];
+ const add=(x,y,n,t)=>{const o={x,y,n,t,s:0,safe:0,k:nodes.length};const e=document.createElement('div');e.className='node'+(t=='hack'?' hack':'');
+  e.style.left=x+'%';e.style.top=y+'%';e.innerHTML=`<div class="hex"><b>${t=='hack'?HK:PC}</b></div><small>${n}</small>`+(mode=='virus'&&t=='pc'?'<div class="files"><i class="file"></i><i class="file"></i><i class="file"></i></div>':'');
+  st.appendChild(e);o.e=e;nodes.push(o);return o};
+ if(mode=='trojan'){
+  st.insertAdjacentHTML('beforeend','<div class="fake" id="fake"><div style="font-size:30px">🎮</div><h4>Free Game Pack</h4><p>Looks useful. No sign of danger.</p><button id="ib">Install</button></div><div class="door" id="door">🚪</div>');
+  add(18,84,'Hacker','hack');[[62,24],[86,24],[62,68],[86,68]].forEach((p,i)=>add(p[0],p[1],'PC-'+(i+1),'pc'));
+  $('go').textContent='Download the "free" app';$('sXl').textContent='KB stolen';
+  setStatus('Four PCs online. A user is looking for a free game...');
+ }else{
+  for(let i=0;i<12;i++)add(HX[Math.floor(i/4)][i%4],HY[Math.floor(i/4)],'PC-'+(i+1),'pc');
+  $('go').textContent=mode=='virus'?'Open infected attachment':'Launch worm';$('sXl').textContent='load %';
+  if(mode=='worm')sv.innerHTML=edges().map(([a,b])=>`<line id="e${a}-${b}" x1="${nodes[a].x}" y1="${nodes[a].y}" x2="${nodes[b].x}" y2="${nodes[b].y}"/>`).join('');
+  setStatus('12 PCs online. Press start. 1–2 PCs will be protected.');
+ }stats()}
+const pcs=()=>nodes.filter(n=>n.t=='pc');
+function stats(){const p=pcs(),inf=p.filter(n=>n.s).length,sf=p.filter(n=>n.safe).length;
+ $('sInf').textContent=inf;$('sSafe').textContent=sf;$('sCl').textContent=p.length-inf-sf;
+ $('pills').innerHTML=p.map(n=>`<i class="${n.s?'i':n.safe?'s':''}"></i>`).join('');
+ const L=mode=='trojan'?kb:mode=='worm'?Math.min(100,inf*11):Math.min(100,inf*4);
+ $('sX').textContent=L;$('load').style.width=(mode=='trojan'?Math.min(100,kb/3):L)+'%'}
+function packet(a,b,o={}){return new Promise(r=>{const d=document.createElement('div');d.className='dot'+(o.em?'':' c');
+ if(o.em)d.textContent=o.em;else d.style.cssText+=`background:${o.col};box-shadow:0 0 10px ${o.col}`;
+ d.style.left=a.x+'%';d.style.top=a.y+'%';st.appendChild(d);d.offsetWidth;d.style.left=b.x+'%';d.style.top=b.y+'%';setTimeout(()=>{d.remove();r()},580)})}
+function infect(n){n.s=1;n.e.classList.add('inf');n.e.querySelectorAll('.file').forEach(f=>f.classList.add('x'));
+ n.e.insertAdjacentHTML('beforeend','<span class="badge">☠️</span><span class="rp"></span>');stats()}
+function protect(n,em,lbl){n.safe=1;n.e.classList.add('safe');n.e.insertAdjacentHTML('beforeend','<span class="badge">'+(em||'🛡️')+'</span>');n.e.querySelector('small').textContent=n.n+(lbl||' secure');stats()}
+function bump(n){n.e.classList.add('blk');setTimeout(()=>n.e.classList.remove('blk'),450)}
+function pickSecure(ex){return pcs().filter(n=>n.k!=ex).sort(()=>Math.random()-.5).slice(0,1+rnd(2))}
+const w=async(ms,t)=>{await sleep(ms);return t!=runId};
+function zap(a,b){const l=document.createElementNS('http://www.w3.org/2000/svg','line');
+ ['x1','y1','x2','y2'].forEach((k,i)=>l.setAttribute(k,[a.x,a.y,b.x,b.y][i]));l.setAttribute('class','hot');sv.appendChild(l);setTimeout(()=>l.remove(),900)}
+async function virus(t){const p=pcs(),s=p[rnd(12)];s.e.classList.add('sel2');const sec=pickSecure(s.k);sec.forEach(n=>protect(n));
+ setStatus('Step 1: A virus hides inside a file on one random computer. It cannot move by itself.');
+ if(await w(1000,t))return;infect(s);
+ setStatus('Step 2: A person opens the host file. The virus attaches to other files on the same PC.');
+ if(await w(1200,t))return;
+ const pool=p.filter(n=>n!=s),inf=[s];
+ while(pool.length){if(t!=runId)return;
+  const n=pool.splice(rnd(pool.length),1)[0],from=inf[rnd(inf.length)];
+  if(n.safe){setStatus(`Step 3: An infected file from PC-${from.k+1} reaches PC-${n.k+1}, but it is protected. Attack blocked.`);await packet(from,n,{col:'#ff2e63'});bump(n);await sleep(400+rnd(500));continue}
+  setStatus(`Step 4: A person on PC-${from.k+1} shares the infected file (USB or share) with a random PC: PC-${n.k+1}.`);await packet(from,n,{em:'💾'});infect(n);inf.push(n);await sleep(300+rnd(700))}
+ setStatus(`Done. Spread randomly through human file sharing. ${inf.length} PCs infected, ${sec.length} stayed green.`)}
+async function worm(t){const p=pcs(),s=p[rnd(12)],sec=pickSecure(s.k);sec.forEach(n=>protect(n,'🛡️',' patched'));
+ setStatus('Step 1: A worm starts alone on one random PC. No host file and no click needed.');if(await w(900,t))return;
+ infect(s);s.e.classList.add('slow');const pool=p.filter(n=>n!=s),inf=[s];let wave=2;
+ while(pool.length&&t==runId){setStatus(`Step ${wave}: Every infected PC scans the network and attacks random targets on its own.`);
+  const batch=[];for(const a of inf.slice()){const k=1+rnd(2);for(let j=0;j<k&&pool.length;j++)batch.push([a,pool.splice(rnd(pool.length),1)[0]])}
+  await Promise.all(batch.map(([a,o])=>{zap(a,o);return packet(a,o,{col:'#ff9f1c'}).then(()=>{if(o.safe)bump(o);else{infect(o);o.e.classList.add('slow');inf.push(o)}})}));
+  wave++;await sleep(250+rnd(400))}
+ setStatus(`Done. The worm spread by itself in random directions. ${inf.length} PCs overloaded, ${sec.length} patched PC${sec.length>1?'s':''} stayed green.`)}
+async function trojan(t){const P=pcs(),v=P[rnd(4)],hk=nodes[0];v.e.classList.add('sel2');
+ setStatus('Step 1: The Trojan pretends to be a safe, useful app.');if(await w(1000,t))return;
+ setStatus(`Step 2: The user on PC-${v.k} chooses to download and install it. That human action is required.`);$('ib').textContent='Installing...';if(await w(1000,t))return;
+ const f=$('fake');f.classList.add('bad');f.innerHTML='<div style="font-size:30px">🐴</div><h4>It was a Trojan</h4><p>The useful look was a disguise.</p>';
+ setStatus('Step 3: The package opens. Hidden code installs on this computer only.');if(await w(1000,t))return;
+ infect(v);P.filter(n=>n!=v).forEach(n=>protect(n,'✅',' clean'));
+ setStatus('Step 4: A hidden backdoor opens. It does not copy itself to the other PCs.');$('door').classList.add('on');if(await w(900,t))return;
+ setStatus('Step 5: Data from this one computer is taken out through the backdoor.');
+ for(const em of['📁','🔑','⌨️']){await packet(v,hk,{em});kb+=90+rnd(60);stats();if(t!=runId)return}
+ setStatus('Done. Only the PC that installed the Trojan is compromised. The others stay clean.')}
+$('rs').onclick=reset;
+$('go').onclick=async()=>{if(busy)return;busy=true;$('go').disabled=true;const t=runId;await({virus,worm,trojan})[mode](t)}
+setMode('virus');
+</script></body></html>
